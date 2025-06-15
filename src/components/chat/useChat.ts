@@ -32,6 +32,13 @@ export interface FilePreviewModalState {
   fileName: string;
 }
 
+/**
+ * Provides state and logic for a chat interface with conversation management, message handling, file uploads, AI model selection, and related UI controls.
+ *
+ * This hook manages chat conversations, message lists, file attachment and upload workflows, AI model and web search settings, and UI state such as sidebar and file preview modals. It exposes handlers for creating, selecting, and deleting conversations, sending messages (with or without file attachments), managing file selection and uploads, previewing files, and handling citation lookups. The hook also restores conversation-specific model settings and supports responsive UI adjustments for mobile devices.
+ *
+ * @returns An object containing chat state, message and conversation data, file upload states and handlers, AI model and web search settings, UI controls, and utility functions for use in a chat application.
+ */
 export function useChat() {
   const navigate = useNavigate();
   const params = useParams({ strict: false });

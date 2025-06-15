@@ -34,6 +34,13 @@ import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Upload } from "lucide-react";
 
+/**
+ * Renders the main chat interface, providing conversation management, message input, file attachment, model selection, and related chat features.
+ *
+ * Integrates drag-and-drop file upload, file preview, model and intensity pickers, web search toggle, and tooltips. The file attachment UI is conditionally available based on the selected model's capabilities.
+ *
+ * @returns The chat page React component.
+ */
 export default function ChatPage() {
   const [messageValue, setMessageValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);

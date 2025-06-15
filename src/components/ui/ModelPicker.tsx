@@ -12,6 +12,15 @@ interface ModelPickerProps {
   disabled?: boolean;
 }
 
+/**
+ * Renders a dropdown component for selecting a model from a predefined list.
+ *
+ * Provides keyboard and mouse navigation, accessibility features, and tooltips for model descriptions and capabilities. Invokes a callback when a new model is selected.
+ *
+ * @param selectedModel - The currently selected model.
+ * @param onModelChange - Callback invoked with the newly selected model.
+ * @param disabled - Optional flag to disable the dropdown.
+ */
 export function ModelPicker({
   selectedModel,
   onModelChange,
