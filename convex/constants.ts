@@ -25,21 +25,6 @@ export const SUPPORTED_MODELS = [
     webSearch: false,
     fileSearch: true,
   },
-  {
-    name: "o3",
-    description: "Slower but more powerful",
-    thinking: true,
-    webSearch: false,
-    fileSearch: true,
-  },
-  {
-    name: "o3-pro",
-    description:
-      "Deep Research, use for background tasks, can take 5-10 minutes",
-    thinking: true,
-    webSearch: false,
-    fileSearch: true,
-  },
 ] as const;
 
 export const WEB_SEARCH_MODELS = SUPPORTED_MODELS.filter(
