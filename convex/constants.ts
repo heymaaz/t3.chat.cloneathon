@@ -33,6 +33,20 @@ export const SUPPORTED_MODELS = [
     webSearch: false,
     fileSearch: true,
   },
+  {
+    name: "gemini-2.0-flash",
+    description: "Gemini 2.0 Flash via OpenRouter",
+    thinking: false,
+    webSearch: false,
+    fileSearch: false,
+  },
+  {
+    name: "grok-3-mini-reasoning",
+    description: "Grok 3 Mini Reasoning via OpenRouter",
+    thinking: true,
+    webSearch: false,
+    fileSearch: false,
+  },
 ] as const;
 
 export const WEB_SEARCH_MODELS = SUPPORTED_MODELS.filter(
