@@ -19,6 +19,13 @@ export const SUPPORTED_MODELS = [
     fileSearch: true,
   },
   {
+    name: "o3-mini",
+    description: "Fast and powerful",
+    thinking: true,
+    webSearch: false,
+    fileSearch: true,
+  },
+  {
     name: "o3",
     description: "Slower but more powerful",
     thinking: true,
