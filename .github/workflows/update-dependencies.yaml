@@ -1,0 +1,54 @@
+name: Update pnpm Dependencies
+
+on:
+  schedule:
+    - cron: "0 0 * * 0" # Runs every Sunday at midnight UTC
+  workflow_dispatch: # Allows manual triggering
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Update dependencies
+        run: pnpm update --latest
+
+      - name: format
+        run: pnpm format
+
+      - name: Create Pull Request if changes exist
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GH_PAT }}
+          commit-message: "chore: update pnpm dependencies"
+          branch: chore/update-dependencies-${{ github.run_id }}
+          delete-branch: true
+          title: "chore: Update pnpm dependencies"
+          body: |
+            Automated pnpm dependency update.
+            This PR was automatically created by a GitHub Action.
+          add-paths: |
+            pnpm-lock.yaml
+            package.json
+          signoff: true
+          base: "main" # Explicitly set to the default branch
+          author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
+          committer: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"

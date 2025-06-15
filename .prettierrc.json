@@ -1,0 +1,16 @@
+{
+  "semi": true,
+  "singleQuote": false,
+  "tabWidth": 2,
+  "trailingComma": "all",
+  "printWidth": 80,
+  "plugins": ["tailwindcss-animate"],
+  "overrides": [
+    {
+      "files": ["pnpm-lock.yaml"],
+      "options": {
+        "singleQuote": true
+      }
+    }
+  ]
+}

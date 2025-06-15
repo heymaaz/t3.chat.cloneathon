@@ -1,0 +1,6 @@
+{
+  "agentCanUpdateSnapshot": true,
+  "install": "pnpm install",
+  "start": "pnpm dev",
+  "snapshot": "snapshot-20250609-f198b41c-ca39-462a-b931-05cf2fb93984"
+}

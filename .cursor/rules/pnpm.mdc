@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Always use pnpm
+- Use pnpm for all install and script commands.
+- Always run `pnpm lint`, `pnpm typecheck`, `pnpm format`, and `pnpm format:check` before committing.

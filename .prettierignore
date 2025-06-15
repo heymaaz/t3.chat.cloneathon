@@ -1,0 +1,12 @@
+# Build outputs
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Generated files
+convex/_generated/
+
+# Public assets (static files don't need formatting)
+public/
