@@ -167,6 +167,23 @@ export const listMessages = query({
   },
 });
 
+export const getRecentMessages = internalQuery({
+  args: { conversationId: v.id("conversations") },
+  returns: v.array(messageDoc),
+  handler: async (
+    ctx: QueryCtx,
+    args: { conversationId: Id<"conversations"> },
+  ): Promise<Doc<"messages">[]> => {
+    return await ctx.db
+      .query("messages")
+      .withIndex("by_conversationId", (q) =>
+        q.eq("conversationId", args.conversationId),
+      )
+      .order("desc")
+      .take(20);
+  },
+});
+
 // Mutations
 export const createConversation = mutation({
   args: {},

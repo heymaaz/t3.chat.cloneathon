@@ -191,13 +191,27 @@ export const generateAiResponse = internalAction({
 
       try {
         if (isOpenRouterModel(selectedModel)) {
-          console.log("Using OpenRouter model:", selectedModel);
+          // Get recent messages for conversation history
+          const recentMessages = (
+            await ctx.runQuery(
+              internal.chatQueriesAndMutations.getRecentMessages,
+              {
+                conversationId: args.conversationId,
+              },
+            )
+          ).reverse();
+
+          // Map messages to the format expected by the AI SDK
+          const history = recentMessages.map((message) => ({
+            role: message.author,
+            content: message.content,
+          }));
+
           const run = streamText({
             model: openrouter(selectedModel),
             system: sysPrompt,
-            messages: [{ role: "user", content: inputText }],
+            messages: history,
           });
-          console.log("OpenRouter model:", run);
           let fullContent = "";
           for await (const delta of run.textStream) {
             fullContent += delta;
@@ -209,13 +223,11 @@ export const generateAiResponse = internalAction({
               },
             );
           }
-          console.log("Full content:", fullContent);
 
           await ctx.runMutation(
             internal.chatQueriesAndMutations.markMessageComplete,
             { messageId: aiMessageId },
           );
-          console.log("Marked message complete");
           return;
         }
 
