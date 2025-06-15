@@ -212,9 +212,7 @@ export const generateAiResponse = internalAction({
             system: sysPrompt,
             messages: history,
           });
-          let fullContent = "";
           for await (const delta of run.textStream) {
-            fullContent += delta;
             await ctx.runMutation(
               internal.chatQueriesAndMutations.appendMessageContent,
               {
