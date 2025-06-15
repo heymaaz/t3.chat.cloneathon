@@ -26,6 +26,7 @@ import {
   isThinkingModel,
   isWebSearchModel,
   SUPPORTED_MODELS,
+  isFileSearchModel,
 } from "@backend/constants";
 import { Textarea } from "@/components/ui/textarea";
 import { useState, useRef, useMemo, useCallback } from "react";
@@ -84,6 +85,7 @@ export default function ChatPage() {
 
   const isThinking = isThinkingModel(selectedModel);
   const isWebSearch = isWebSearchModel(selectedModel);
+  const isFileSearch = isFileSearchModel(selectedModel);
 
   const tooltipText = useMemo(() => {
     return !messageValue.trim() ? "Message requires text" : "Send message";
@@ -288,10 +290,10 @@ export default function ChatPage() {
                       <ModelPicker
                         selectedModel={
                           SUPPORTED_MODELS.find(
-                            (m) => m.name === selectedModel,
+                            (m) => m.id === selectedModel,
                           ) ?? SUPPORTED_MODELS[0]
                         }
-                        onModelChange={(model) => setSelectedModel(model.name)}
+                        onModelChange={(model) => setSelectedModel(model.id)}
                         disabled={isAITyping || isUploadingFiles}
                       />
 
@@ -345,41 +347,43 @@ export default function ChatPage() {
                         </TooltipProvider>
                       )}
 
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              className="flex items-center gap-2 rounded-full border border-border px-4 py-2 font-medium text-primary hover:text-primary"
-                              onClick={handleAttachmentClick}
-                              disabled={
-                                selectedFiles.length >= MAX_FILES ||
-                                isUploadingFiles
-                              }
-                            >
-                              <Paperclip className="h-4 w-4" />
-                              <span className="hidden md:block">Attach</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <div>
-                              {selectedFiles.length >= MAX_FILES ? (
-                                <p>Maximum {MAX_FILES} files allowed</p>
-                              ) : (
-                                <>
-                                  <p className="text-xs opacity-80">
-                                    Add an attachment
-                                  </p>
-                                  <p className="text-xs opacity-80">
-                                    Accepts: {SUPPORTED_FILE_TYPES.join(", ")}
-                                  </p>
-                                </>
-                              )}
-                            </div>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
+                      {isFileSearch && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                className="flex items-center gap-2 rounded-full border border-border px-4 py-2 font-medium text-primary hover:text-primary"
+                                onClick={handleAttachmentClick}
+                                disabled={
+                                  selectedFiles.length >= MAX_FILES ||
+                                  isUploadingFiles
+                                }
+                              >
+                                <Paperclip className="h-4 w-4" />
+                                <span className="hidden md:block">Attach</span>
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <div>
+                                {selectedFiles.length >= MAX_FILES ? (
+                                  <p>Maximum {MAX_FILES} files allowed</p>
+                                ) : (
+                                  <>
+                                    <p className="text-xs opacity-80">
+                                      Add an attachment
+                                    </p>
+                                    <p className="text-xs opacity-80">
+                                      Accepts: {SUPPORTED_FILE_TYPES.join(", ")}
+                                    </p>
+                                  </>
+                                )}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </div>
                     <TooltipProvider>
                       <Tooltip>

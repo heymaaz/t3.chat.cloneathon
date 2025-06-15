@@ -13,6 +13,8 @@ import { v } from "convex/values";
 import { Id, Doc } from "./_generated/dataModel";
 import { ActionCtx } from "./_generated/server";
 import { getLoggedInUser } from "./chatQueriesAndMutations";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
+import { streamText } from "ai";
 import {
   MAX_FILES,
   MAX_FILE_SIZE,
@@ -20,6 +22,7 @@ import {
   getMimeType,
   isSupportedModel,
   isThinkingModel,
+  isOpenRouterModel,
   SYSTEM_PROMPT,
 } from "./constants";
 
@@ -55,6 +58,10 @@ interface ResponseOutput {
 const openai = new OpenAI({
   baseURL: process.env.CONVEX_OPENAI_BASE_URL,
   apiKey: process.env.CONVEX_OPENAI_API_KEY,
+});
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.CONVEX_OPENROUTER_API_KEY!,
 });
 
 // Action that uses OpenAI Responses API to generate AI responses with file search
@@ -183,6 +190,35 @@ export const generateAiResponse = internalAction({
       );
 
       try {
+        if (isOpenRouterModel(selectedModel)) {
+          console.log("Using OpenRouter model:", selectedModel);
+          const run = streamText({
+            model: openrouter(selectedModel),
+            system: sysPrompt,
+            messages: [{ role: "user", content: inputText }],
+          });
+          console.log("OpenRouter model:", run);
+          let fullContent = "";
+          for await (const delta of run.textStream) {
+            fullContent += delta;
+            await ctx.runMutation(
+              internal.chatQueriesAndMutations.appendMessageContent,
+              {
+                messageId: aiMessageId,
+                content: delta,
+              },
+            );
+          }
+          console.log("Full content:", fullContent);
+
+          await ctx.runMutation(
+            internal.chatQueriesAndMutations.markMessageComplete,
+            { messageId: aiMessageId },
+          );
+          console.log("Marked message complete");
+          return;
+        }
+
         // Create the streaming response using the Responses API
         const response = await openai.responses.create({
           model: selectedModel,

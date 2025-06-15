@@ -42,7 +42,7 @@ export function ModelPicker({
   useEffect(() => {
     if (isOpen) {
       const selectedIndex = SUPPORTED_MODELS.findIndex(
-        (m) => m.name === selectedModel.name,
+        (m) => m.id === selectedModel.id,
       );
       setFocusedIndex(selectedIndex > -1 ? selectedIndex : 0);
     }
@@ -115,10 +115,10 @@ export function ModelPicker({
           <div className="py-1">
             {SUPPORTED_MODELS.map((model, index) => (
               <button
-                key={model.name}
+                key={model.id}
                 id={`model-option-${index}`}
                 role="option"
-                aria-selected={selectedModel.name === model.name}
+                aria-selected={selectedModel.id === model.id}
                 onClick={() => {
                   onModelChange(model);
                   setIsOpen(false);
