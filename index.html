@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Configure PWA display on iOS -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="theme-color" content="#012A4A" />
+
+    <link rel="icon" href="/favicon.ico" type="image/x-icon" sizes="16x16" />
+    <link rel="apple-touch-icon" href="/AppImages/ios/180.png" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="stylesheet" href="/src/index.css" />
+
+    <title>t3 chat clone</title>
+
+    <meta property="og:image" content="/og-preview.png" />
+
+    <!-- Added link tags for multiple PNG favicon sizes -->
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="/AppImages/ios/16.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="/AppImages/ios/32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="64x64"
+      href="/AppImages/ios/64.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="128x128"
+      href="/AppImages/ios/128.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/AppImages/ios/192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="256x256"
+      href="/AppImages/ios/256.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/AppImages/ios/512.png"
+    />
+    <!-- Safari pinned-tab icon -->
+    <link rel="mask-icon" href="/favicon.ico" color="#012A4A" />
+    <!-- Legacy shortcut icon fallback -->
+    <link rel="shortcut icon" href="/favicon.ico" />
+  </head>
+  <body>
+    <noscript
+      style="
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        text-align: center;
+        font-size: 1.5em;
+      "
+    >
+      To use this site, please enable JavaScript in your browser settings.
+    </noscript>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
