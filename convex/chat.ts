@@ -191,12 +191,12 @@ export const generateAiResponse = internalAction({
           instructions: sysPrompt,
           tools: tools.length > 0 ? tools : undefined,
           include: tools.length > 0 ? ["file_search_call.results"] : undefined, // Include search results
-          // reasoning: isThinkingModel(selectedModel)
-          //   ? {
-          //       effort: thinkingIntensity,
-          //       summary: "detailed",
-          //     }
-          // : undefined,
+          reasoning: isThinkingModel(selectedModel)
+            ? {
+                effort: thinkingIntensity,
+                summary: "detailed",
+              }
+            : undefined,
           temperature: 1,
           top_p: 1,
           stream: true, // Enable streaming
