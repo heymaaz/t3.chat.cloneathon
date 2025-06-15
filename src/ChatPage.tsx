@@ -141,10 +141,14 @@ export default function ChatPage() {
     <TooltipProvider delayDuration={0}>
       <div
         className="flex h-[calc(100vh-4rem)] bg-background relative"
-        onDragEnter={handleDragEnter}
-        onDragLeave={handleDragLeave}
-        onDragOver={handleDragOver}
-        onDrop={handleDrop}
+        {...(isFileSearch
+          ? {
+              onDragEnter: handleDragEnter,
+              onDragLeave: handleDragLeave,
+              onDragOver: handleDragOver,
+              onDrop: handleDrop,
+            }
+          : {})}
       >
         <ChatSidebar
           conversations={conversations}
@@ -245,16 +249,18 @@ export default function ChatPage() {
                 </ScrollArea>
               )}
               <form onSubmit={handleLocalSubmit} className="relative">
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => void handleFileChange(e)}
-                  accept={SUPPORTED_FILE_TYPES.map((type) => `.${type}`).join(
-                    ",",
-                  )}
-                  multiple
-                  style={{ display: "none" }}
-                />
+                {isFileSearch && (
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => void handleFileChange(e)}
+                    accept={SUPPORTED_FILE_TYPES.map((type) => `.${type}`).join(
+                      ",",
+                    )}
+                    multiple
+                    style={{ display: "none" }}
+                  />
+                )}
                 <div className="flex flex-col rounded-t-2xl border border-border bg-background p-0">
                   <Textarea
                     ref={textareaRef}

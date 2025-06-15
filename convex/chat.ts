@@ -197,13 +197,14 @@ export const generateAiResponse = internalAction({
               internal.chatQueriesAndMutations.getRecentMessages,
               {
                 conversationId: args.conversationId,
+                userId: conversation.userId,
               },
             )
           ).reverse();
 
-          // Map messages to the format expected by the AI SDK
           const history = recentMessages.map((message) => ({
-            role: message.author,
+            // @ts-expect-error: Intentional comparison between 'ai' and 'assistant'/'user' for mapping roles
+            role: message.author === "ai" ? "assistant" : "user",
             content: message.content,
           }));
 

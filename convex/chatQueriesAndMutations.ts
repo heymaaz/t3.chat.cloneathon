@@ -168,12 +168,24 @@ export const listMessages = query({
 });
 
 export const getRecentMessages = internalQuery({
-  args: { conversationId: v.id("conversations") },
+  args: {
+    conversationId: v.id("conversations"),
+    userId: v.id("users"),
+  },
   returns: v.array(messageDoc),
   handler: async (
     ctx: QueryCtx,
-    args: { conversationId: Id<"conversations"> },
+    args: { conversationId: Id<"conversations">; userId: Id<"users"> },
   ): Promise<Doc<"messages">[]> => {
+    const conversation = await ctx.db.get(args.conversationId);
+    if (!conversation || conversation.userId !== args.userId) {
+      console.error(
+        "Someone is trying to access a conversation they don't own",
+        conversation,
+        args.userId,
+      );
+      throw new Error("Not found");
+    }
     return await ctx.db
       .query("messages")
       .withIndex("by_conversationId", (q) =>
