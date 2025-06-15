@@ -62,19 +62,22 @@ export const SUPPORTED_MODELS = [
 ] as const;
 
 export const WEB_SEARCH_MODELS = SUPPORTED_MODELS.filter(
-  (model) => model.webSearch,
+  (model): model is Extract<typeof model, { webSearch: true }> =>
+    model.webSearch,
 ).map((model) => model.id);
 
 export const THINKING_MODELS = SUPPORTED_MODELS.filter(
-  (model) => model.thinking,
+  (model): model is Extract<typeof model, { thinking: true }> => model.thinking,
 ).map((model) => model.id);
 
 export const FILE_SEARCH_MODELS = SUPPORTED_MODELS.filter(
-  (model) => model.fileSearch,
+  (model): model is Extract<typeof model, { fileSearch: true }> =>
+    model.fileSearch,
 ).map((model) => model.id);
 
 export const OPENROUTER_MODELS = SUPPORTED_MODELS.filter(
-  (model) => model.openRouter,
+  (model): model is Extract<typeof model, { openRouter: true }> =>
+    model.openRouter,
 ).map((model) => model.id);
 
 export const isOpenRouterModel = (

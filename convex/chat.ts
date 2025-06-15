@@ -14,7 +14,7 @@ import { Id, Doc } from "./_generated/dataModel";
 import { ActionCtx } from "./_generated/server";
 import { getLoggedInUser } from "./chatQueriesAndMutations";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { streamText } from "ai";
+import { streamText, type CoreMessage } from "ai";
 import {
   MAX_FILES,
   MAX_FILE_SIZE,
@@ -202,11 +202,22 @@ export const generateAiResponse = internalAction({
             )
           ).reverse();
 
-          const history = recentMessages.map((message) => ({
-            // @ts-expect-error: Intentional comparison between 'ai' and 'assistant'/'user' for mapping roles
-            role: message.author === "ai" ? "assistant" : "user",
-            content: message.content,
-          }));
+          const history: CoreMessage[] = recentMessages.map(
+            (message): CoreMessage => {
+              // @ts-expect-error: Intentional comparison between 'ai' and 'assistant'/'user' for mapping roles
+              if (message.author === "ai") {
+                return {
+                  role: "assistant",
+                  content: message.content,
+                };
+              } else {
+                return {
+                  role: "user",
+                  content: message.content,
+                };
+              }
+            },
+          );
 
           const run = streamText({
             model: openrouter(selectedModel),
