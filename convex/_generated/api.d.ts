@@ -13,6 +13,7 @@ import type {
   FilterApi,
   FunctionReference,
 } from "convex/server";
+import type * as aiService from "../aiService.js";
 import type * as auth from "../auth.js";
 import type * as chat from "../chat.js";
 import type * as chatQueriesAndMutations from "../chatQueriesAndMutations.js";
@@ -30,6 +31,7 @@ import type * as router from "../router.js";
  * ```
  */
 declare const fullApi: ApiFromModules<{
+  aiService: typeof aiService;
   auth: typeof auth;
   chat: typeof chat;
   chatQueriesAndMutations: typeof chatQueriesAndMutations;

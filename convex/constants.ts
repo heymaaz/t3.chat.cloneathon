@@ -10,6 +10,7 @@ export const SUPPORTED_MODELS = [
     thinking: false,
     webSearch: true,
     fileSearch: true,
+    provider: "openai",
   },
   {
     name: "o4-mini",
@@ -17,6 +18,7 @@ export const SUPPORTED_MODELS = [
     thinking: true,
     webSearch: false,
     fileSearch: true,
+    provider: "openai",
   },
   {
     name: "o3",
@@ -24,6 +26,7 @@ export const SUPPORTED_MODELS = [
     thinking: true,
     webSearch: false,
     fileSearch: true,
+    provider: "openai",
   },
   {
     name: "o3-pro",
@@ -32,6 +35,25 @@ export const SUPPORTED_MODELS = [
     thinking: true,
     webSearch: false,
     fileSearch: true,
+    provider: "openai",
+  },
+  {
+    name: "gemini-2.0-flash-exp",
+    description: "Google's latest multimodal model, fast and versatile",
+    thinking: false,
+    webSearch: false,
+    fileSearch: false,
+    provider: "openrouter",
+    openrouterModel: "google/gemini-2.0-flash-exp:free",
+  },
+  {
+    name: "grok-3-mini-reasoning",
+    description: "Fast reasoning model with advanced logic capabilities",
+    thinking: true,
+    webSearch: false,
+    fileSearch: false,
+    provider: "openrouter",
+    openrouterModel: "x-ai/grok-3-mini-reasoning",
   },
 ] as const;
 

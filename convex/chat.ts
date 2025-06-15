@@ -22,35 +22,7 @@ import {
   isThinkingModel,
   SYSTEM_PROMPT,
 } from "./constants";
-
-// Type definitions for OpenAI response structures
-interface FileCitationAnnotation {
-  type: "file_citation";
-  file_id: string;
-  filename?: string;
-}
-
-interface UrlCitationAnnotation {
-  type: "url_citation";
-  url: string;
-  title?: string;
-}
-
-type Annotation = FileCitationAnnotation | UrlCitationAnnotation;
-
-interface OutputItemWithAnnotations {
-  annotations?: Annotation[];
-}
-
-interface OutputTextContent {
-  type: "output_text";
-  annotations?: Annotation[];
-}
-
-interface ResponseOutput {
-  type: string;
-  content?: OutputTextContent[];
-}
+import { generateAIResponse } from "./aiService";
 
 const openai = new OpenAI({
   baseURL: process.env.CONVEX_OPENAI_BASE_URL,
@@ -183,28 +155,22 @@ export const generateAiResponse = internalAction({
       );
 
       try {
-        // Create the streaming response using the Responses API
-        const response = await openai.responses.create({
+        // Create the streaming response using the unified AI service
+        const aiResponse = await generateAIResponse({
           model: selectedModel,
-          input: inputText, // Simple string input
-          previous_response_id: conversation.lastResponseId || undefined,
+          input: inputText,
           instructions: sysPrompt,
-          tools: tools.length > 0 ? tools : undefined,
-          include: tools.length > 0 ? ["file_search_call.results"] : undefined, // Include search results
-          reasoning: isThinkingModel(selectedModel)
-            ? {
-                effort: thinkingIntensity,
-                summary: "detailed",
-              }
-            : undefined,
+          previousResponseId: conversation.lastResponseId || undefined,
+          vectorStoreIds:
+            vectorStoreIds.length > 0 ? vectorStoreIds : undefined,
+          thinkingIntensity: thinkingIntensity,
+          webSearchEnabled: webSearchEnabled,
           temperature: 1,
-          top_p: 1,
-          stream: true, // Enable streaming
         });
 
         // Handle streaming response
         let fullContent = "";
-        let openaiResponseId = "";
+        let responseId = "";
         let reasoningSummary = "";
         const citations: Array<
           | {
@@ -219,24 +185,22 @@ export const generateAiResponse = internalAction({
             }
         > = [];
 
-        for await (const event of response) {
+        for await (const event of aiResponse.stream) {
           try {
-            if (event.type === "response.created") {
-              openaiResponseId = event.response.id;
-            } else if (event.type === "response.output_text.delta") {
+            if (event.type === "content") {
               // Accumulate the content
-              fullContent += event.delta;
+              fullContent += event.content || "";
 
               // Immediately append each delta to the database for real-time streaming
               await ctx.runMutation(
                 internal.chatQueriesAndMutations.appendMessageContent,
                 {
                   messageId: aiMessageId,
-                  content: event.delta,
+                  content: event.content || "",
                 },
               );
-            } else if (event.type === "response.reasoning_summary_text.delta") {
-              reasoningSummary += event.delta;
+            } else if (event.type === "reasoning") {
+              reasoningSummary += event.reasoning || "";
 
               // Stream reasoning summary updates in real-time
               await ctx.runMutation(
@@ -246,115 +210,60 @@ export const generateAiResponse = internalAction({
                   reasoningSummary: reasoningSummary,
                 },
               );
-            } else if (event.type === "response.reasoning_summary_text.done") {
-              reasoningSummary += event.text;
-
-              // Final reasoning summary update
-              await ctx.runMutation(
-                internal.chatQueriesAndMutations.updateReasoningSummary,
-                {
-                  messageId: aiMessageId,
-                  reasoningSummary: reasoningSummary,
-                },
-              );
-            } else if (event.type === "response.output_text.done") {
-              // Handle file citations if present
-              const outputItem = event as OutputItemWithAnnotations;
-              if (outputItem && outputItem.annotations) {
-                const annotations = outputItem.annotations;
-                for (const annotation of annotations) {
-                  if (annotation.type === "file_citation") {
-                    const fileId = annotation.file_id;
-                    const fileName = annotation.filename || "unknown";
-
-                    // Add to citations array if not already present
-                    if (
-                      !citations.some(
-                        (c) => c.type === "file" && c.fileId === fileId,
-                      )
-                    ) {
-                      citations.push({
-                        type: "file",
-                        fileId,
-                        fileName,
-                      });
-                    }
-
-                    console.log(`File Citation: ${fileName} (${fileId})`);
-                  } else if (annotation.type === "url_citation") {
-                    const url = annotation.url;
-                    const title = annotation.title || "Web Result";
-
-                    // Add to citations array if not already present
-                    if (
-                      !citations.some((c) => c.type === "url" && c.url === url)
-                    ) {
-                      citations.push({
-                        type: "url",
-                        url,
-                        title,
-                      });
-                    }
-
-                    console.log(`URL Citation: ${title} (${url})`);
+            } else if (event.type === "citation") {
+              if (event.citation) {
+                const citation = event.citation;
+                if (
+                  citation.type === "file" &&
+                  citation.fileId &&
+                  citation.fileName
+                ) {
+                  // Add to citations array if not already present
+                  if (
+                    !citations.some(
+                      (c) => c.type === "file" && c.fileId === citation.fileId,
+                    )
+                  ) {
+                    citations.push({
+                      type: "file",
+                      fileId: citation.fileId,
+                      fileName: citation.fileName,
+                    });
                   }
+                  console.log(
+                    `File Citation: ${citation.fileName} (${citation.fileId})`,
+                  );
+                } else if (
+                  citation.type === "url" &&
+                  citation.url &&
+                  citation.title
+                ) {
+                  // Add to citations array if not already present
+                  if (
+                    !citations.some(
+                      (c) => c.type === "url" && c.url === citation.url,
+                    )
+                  ) {
+                    citations.push({
+                      type: "url",
+                      url: citation.url,
+                      title: citation.title,
+                    });
+                  }
+                  console.log(
+                    `URL Citation: ${citation.title} (${citation.url})`,
+                  );
                 }
               }
-            } else if (event.type === "response.completed") {
-              // Extract any final citations from the completed response
-              if (event.response.output && event.response.output.length > 0) {
-                for (const item of event.response.output as ResponseOutput[]) {
-                  if (item.type === "message" && item.content) {
-                    for (const content of item.content) {
-                      if (
-                        content.type === "output_text" &&
-                        content.annotations
-                      ) {
-                        for (const annotation of content.annotations) {
-                          if (annotation.type === "file_citation") {
-                            const fileId = annotation.file_id;
-                            const fileName = annotation.filename || "unknown";
-
-                            if (
-                              !citations.some(
-                                (c) => c.type === "file" && c.fileId === fileId,
-                              )
-                            ) {
-                              citations.push({
-                                type: "file",
-                                fileId,
-                                fileName,
-                              });
-                            }
-                          } else if (annotation.type === "url_citation") {
-                            const url = annotation.url;
-                            const title = annotation.title || "Web Result";
-
-                            if (
-                              !citations.some(
-                                (c) => c.type === "url" && c.url === url,
-                              )
-                            ) {
-                              citations.push({
-                                type: "url",
-                                url,
-                                title,
-                              });
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
+            } else if (event.type === "completed") {
+              responseId = event.id || "";
 
               // Mark the message as completed and add final data
               await ctx.runMutation(
                 internal.chatQueriesAndMutations.markMessageComplete,
                 {
                   messageId: aiMessageId,
-                  openaiResponseId: openaiResponseId,
+                  openaiResponseId: responseId,
                   reasoningSummary: reasoningSummary.trim() || undefined,
                   citations: citations.length > 0 ? citations : undefined,
                 },
@@ -365,7 +274,7 @@ export const generateAiResponse = internalAction({
                 internal.chatQueriesAndMutations.updateConversationResponseId,
                 {
                   conversationId: args.conversationId,
-                  responseId: openaiResponseId,
+                  responseId: responseId,
                 },
               );
 
@@ -373,6 +282,8 @@ export const generateAiResponse = internalAction({
                 `Streaming response completed for conversation ${args.conversationId}`,
               );
               break;
+            } else if (event.type === "error") {
+              throw new Error(event.error || "Unknown streaming error");
             }
           } catch (streamError) {
             console.error("Error processing stream event:", streamError);
@@ -382,7 +293,7 @@ export const generateAiResponse = internalAction({
 
         // Ensure we have some content, even if streaming failed partway
         if (!fullContent.trim()) {
-          console.warn("No content generated in OpenAI response");
+          console.warn("No content generated in AI response");
           await ctx.runMutation(
             internal.chatQueriesAndMutations.markMessageError,
             {
@@ -391,7 +302,7 @@ export const generateAiResponse = internalAction({
           );
         }
       } catch (error) {
-        console.error("Error during OpenAI response generation:", error);
+        console.error("Error during AI response generation:", error);
         // Update the existing AI message with error status and content
         // instead of creating a new message
         await ctx.runMutation(
