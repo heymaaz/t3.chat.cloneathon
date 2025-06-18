@@ -1,7 +1,8 @@
 import { memo, useMemo } from "react";
 import { Sidebar, SidebarItem } from "@/components/ui/sidebar/sidebar";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash } from "lucide-react";
+import { Plus, Trash, Settings } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import type { Id, Doc } from "@backend/_generated/dataModel";
 
 type Conversation = Doc<"conversations">;
@@ -71,6 +72,7 @@ const ChatSidebar = memo(
     isOpen,
     setIsOpen,
   }: ChatSidebarProps) => {
+    const navigate = useNavigate();
     const groupedConversations = useMemo(() => {
       if (!conversations || conversations.length === 0) return [];
       return groupConversationsByTime(conversations);
@@ -78,7 +80,7 @@ const ChatSidebar = memo(
 
     return (
       <Sidebar
-        className="border-r border-border z-40"
+        className="border-r border-border z-40 flex flex-col"
         isOpen={isOpen}
         setIsOpen={setIsOpen}
       >
@@ -92,7 +94,8 @@ const ChatSidebar = memo(
             New chat
           </Button>
         </div>
-        <div className="p-2">
+
+        <div className="flex-1 overflow-y-auto p-2">
           {groupedConversations.length > 0 ? (
             <div className="space-y-4">
               {groupedConversations.map(([groupName, groupConversations]) => (
@@ -141,6 +144,18 @@ const ChatSidebar = memo(
               </div>
             </div>
           )}
+        </div>
+
+        {/* Settings Footer */}
+        <div className="p-3 border-t border-border mt-auto">
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+            onClick={() => void navigate({ to: "/settings" })}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Settings
+          </Button>
         </div>
       </Sidebar>
     );

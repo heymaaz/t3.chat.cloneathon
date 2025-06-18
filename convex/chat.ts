@@ -54,19 +54,22 @@ interface ResponseOutput {
   content?: OutputTextContent[];
 }
 
-const openai = new OpenAI({
-  baseURL: process.env.CONVEX_OPENAI_BASE_URL,
-  apiKey: process.env.CONVEX_OPENAI_API_KEY,
-});
+// OpenAI client will be created with user's API key in each action
 
 // Action that uses OpenAI Responses API to generate AI responses with file search
 export const generateAiResponse = internalAction({
   args: {
     conversationId: v.id("conversations"),
+    openaiApiKey: v.optional(v.string()),
+    openrouterApiKey: v.optional(v.string()),
   },
   handler: async (
     ctx: ActionCtx,
-    args: { conversationId: Id<"conversations"> },
+    args: {
+      conversationId: Id<"conversations">;
+      openaiApiKey?: string;
+      openrouterApiKey?: string;
+    },
   ) => {
     try {
       // Get the conversation to check for previous response ID and vector store
@@ -186,10 +189,15 @@ export const generateAiResponse = internalAction({
 
       try {
         if (isOpenRouterModel(selectedModel)) {
+          // Validate API key for OpenRouter models
+          if (!args.openrouterApiKey) {
+            throw new Error("OpenRouter API key is required for this model");
+          }
+
           // Use OpenAI SDK with OpenRouter base URL for unified handling
           const openrouterClient = new OpenAI({
             baseURL: "https://openrouter.ai/api/v1",
-            apiKey: process.env.CONVEX_OPENROUTER_API_KEY!,
+            apiKey: args.openrouterApiKey,
           });
 
           // Get recent messages for conversation history
@@ -511,8 +519,18 @@ export const generateAiResponse = internalAction({
           return;
         }
 
+        // Validate API key for OpenAI models
+        if (!args.openaiApiKey) {
+          throw new Error("OpenAI API key is required for this model");
+        }
+
+        // Create OpenAI client with user's API key
+        const openaiClient = new OpenAI({
+          apiKey: args.openaiApiKey,
+        });
+
         // Create the streaming response using the Responses API
-        const response = await openai.responses.create({
+        const response = await openaiClient.responses.create({
           model: selectedModel,
           input: inputText, // Simple string input
           previous_response_id: conversation.lastResponseId || undefined,
@@ -767,6 +785,8 @@ export const uploadFileAndSendMessage = action({
       v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
     ),
     timezone: v.optional(v.string()),
+    openaiApiKey: v.optional(v.string()),
+    openrouterApiKey: v.optional(v.string()),
   },
   returns: v.object({
     success: v.boolean(),
@@ -785,6 +805,8 @@ export const uploadFileAndSendMessage = action({
       model?: string;
       thinkingIntensity?: "low" | "medium" | "high";
       timezone?: string;
+      openaiApiKey?: string;
+      openrouterApiKey?: string;
     },
   ): Promise<{ success: boolean; errors: string[] }> => {
     const errors: string[] = [];
@@ -841,11 +863,23 @@ export const uploadFileAndSendMessage = action({
       );
     }
 
+    // Validate API key if files need to be uploaded
+    if (args.uploadedConvexFiles.length > 0 && !args.openaiApiKey) {
+      throw new Error("OpenAI API key is required to upload files");
+    }
+
+    // Create OpenAI client with user's API key if needed
+    const openaiClient = args.openaiApiKey
+      ? new OpenAI({
+          apiKey: args.openaiApiKey,
+        })
+      : null;
+
     // Create or get vector store for this conversation
     let vectorStoreId = conversation.vectorStoreId;
-    if (!vectorStoreId && args.uploadedConvexFiles.length > 0) {
+    if (!vectorStoreId && args.uploadedConvexFiles.length > 0 && openaiClient) {
       try {
-        const vectorStore = await openai.vectorStores.create({
+        const vectorStore = await openaiClient.vectorStores.create({
           name: `conversation_${args.conversationId}`,
         });
         vectorStoreId = vectorStore.id;
@@ -878,7 +912,7 @@ export const uploadFileAndSendMessage = action({
         .split(".")
         .pop()
         ?.toLowerCase();
-      if (!isSupportedFileExtension(fileExtension)) {
+      if (!fileExtension || !isSupportedFileExtension(fileExtension)) {
         const errorMessage = `File ${uploadedFile.fileName} has unsupported type: ${fileExtension}. Skipping.`;
         console.warn(errorMessage);
         errors.push(errorMessage);
@@ -909,7 +943,11 @@ export const uploadFileAndSendMessage = action({
           uploadedFile.fileName,
         );
 
-        const openAIFile = await openai.files.create({
+        if (!openaiClient) {
+          throw new Error("OpenAI client not available for file upload");
+        }
+
+        const openAIFile = await openaiClient.files.create({
           file: fileForOpenAI,
           purpose: "assistants", // Required for vector stores
         });
@@ -922,9 +960,9 @@ export const uploadFileAndSendMessage = action({
         );
 
         // Add file to vector store if we have one
-        if (vectorStoreId) {
+        if (vectorStoreId && openaiClient) {
           try {
-            await openai.vectorStores.files.create(vectorStoreId, {
+            await openaiClient.vectorStores.files.create(vectorStoreId, {
               file_id: openAIFile.id,
             });
 
@@ -1034,6 +1072,8 @@ export const uploadFileAndSendMessage = action({
     // Schedule the AI response action
     await ctx.scheduler.runAfter(0, internal.chat.generateAiResponse, {
       conversationId: args.conversationId,
+      openaiApiKey: args.openaiApiKey,
+      openrouterApiKey: args.openrouterApiKey,
     });
 
     // Schedule title generation if this was the first user message with text content
@@ -1043,6 +1083,7 @@ export const uploadFileAndSendMessage = action({
         internal.chat.generateConversationTitleAction,
         {
           conversationId: args.conversationId,
+          openaiApiKey: args.openaiApiKey,
         },
       );
     }
@@ -1054,10 +1095,14 @@ export const uploadFileAndSendMessage = action({
 export const generateConversationTitleAction = internalAction({
   args: {
     conversationId: v.id("conversations"),
+    openaiApiKey: v.optional(v.string()),
   },
   handler: async (
     ctx: ActionCtx,
-    args: { conversationId: Id<"conversations"> },
+    args: {
+      conversationId: Id<"conversations">;
+      openaiApiKey?: string;
+    },
   ): Promise<null> => {
     try {
       // Fetch the first message in the conversation
@@ -1110,7 +1155,18 @@ ${promptContent}
 
 Title:`;
 
-      const response = await openai.responses.create({
+      // Use a default API key from environment for title generation if user key not provided
+      const apiKey = args.openaiApiKey || process.env.CONVEX_OPENAI_API_KEY;
+      if (!apiKey) {
+        console.warn("No OpenAI API key available for title generation");
+        return null;
+      }
+
+      const openaiClient = new OpenAI({
+        apiKey: apiKey,
+      });
+
+      const response = await openaiClient.responses.create({
         model: "gpt-4.1-nano",
         input: [{ role: "user", content: prompt }], // Use input array
         temperature: 0.5, // Adjust temperature for desired creativity/focus

@@ -4,6 +4,7 @@ import {
   createRouter,
 } from "@tanstack/react-router";
 import ChatPage from "@/ChatPage";
+import SettingsPage from "@/pages/SettingsPage";
 import { RouterErrorBoundary } from "@/RouterErrorBoundary";
 import { toast } from "sonner";
 import { Root } from "./Root";
@@ -36,7 +37,17 @@ export const conversationRoute = createRoute({
   },
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, conversationRoute]);
+export const settingsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/settings",
+  component: SettingsPage,
+});
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  conversationRoute,
+  settingsRoute,
+]);
 
 export const router = createRouter({
   routeTree,
