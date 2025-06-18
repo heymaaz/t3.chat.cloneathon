@@ -17,8 +17,6 @@
   },
   "dependencies": {
     "@convex-dev/auth": "^0.0.87",
-    "@radix-ui/react-label": "^2.1.7",
-    "@radix-ui/react-tabs": "^1.1.12",
     "@tailwindcss/typography": "^0.5.16",
     "@tailwindcss/vite": "^4.1.8",
     "@tanstack/react-router": "^1.121.0",
