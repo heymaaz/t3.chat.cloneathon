@@ -13,8 +13,7 @@ import { v } from "convex/values";
 import { Id, Doc } from "./_generated/dataModel";
 import { ActionCtx } from "./_generated/server";
 import { getLoggedInUser } from "./chatQueriesAndMutations";
-import { createOpenRouter } from "@openrouter/ai-sdk-provider";
-import { streamText, type CoreMessage } from "ai";
+import { type CoreMessage } from "ai";
 import {
   MAX_FILES,
   MAX_FILE_SIZE,
@@ -58,10 +57,6 @@ interface ResponseOutput {
 const openai = new OpenAI({
   baseURL: process.env.CONVEX_OPENAI_BASE_URL,
   apiKey: process.env.CONVEX_OPENAI_API_KEY,
-});
-
-const openrouter = createOpenRouter({
-  apiKey: process.env.CONVEX_OPENROUTER_API_KEY!,
 });
 
 // Action that uses OpenAI Responses API to generate AI responses with file search
@@ -318,14 +313,12 @@ export const generateAiResponse = internalAction({
               await openrouterClient.chat.completions.create(streamingParams);
 
             let reasoningSummary = "";
-            let fullContent = "";
 
             for await (const chunk of responseStream) {
               const delta = chunk.choices[0]?.delta;
               if (!delta) continue;
 
               if (delta.content) {
-                fullContent += delta.content;
                 await ctx.runMutation(
                   internal.chatQueriesAndMutations.appendMessageContent,
                   {
@@ -449,7 +442,6 @@ export const generateAiResponse = internalAction({
             await openrouterClient.chat.completions.create(params);
 
           let reasoningSummary = "";
-          let fullContent = "";
           const citations: Array<{
             type: "url";
             url: string;
@@ -461,7 +453,6 @@ export const generateAiResponse = internalAction({
             if (!delta) continue;
 
             if (delta.content) {
-              fullContent += delta.content;
               await ctx.runMutation(
                 internal.chatQueriesAndMutations.appendMessageContent,
                 {
