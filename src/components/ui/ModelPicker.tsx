@@ -42,7 +42,7 @@ export function ModelPicker({
   useEffect(() => {
     if (isOpen) {
       const selectedIndex = SUPPORTED_MODELS.findIndex(
-        (m) => m.name === selectedModel.name,
+        (m) => m.id === selectedModel.id,
       );
       setFocusedIndex(selectedIndex > -1 ? selectedIndex : 0);
     }
@@ -115,10 +115,10 @@ export function ModelPicker({
           <div className="py-1">
             {SUPPORTED_MODELS.map((model, index) => (
               <button
-                key={model.name}
+                key={model.id}
                 id={`model-option-${index}`}
                 role="option"
-                aria-selected={selectedModel.name === model.name}
+                aria-selected={selectedModel.id === model.id}
                 onClick={() => {
                   onModelChange(model);
                   setIsOpen(false);
@@ -138,8 +138,10 @@ export function ModelPicker({
                     <span className="flex items-center gap-2">
                       <span>{model.name}</span>
                       <Tooltip>
-                        <TooltipTrigger>
-                          <Info className="h-3 w-3 opacity-50" />
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Info className="h-3 w-3 opacity-50" />
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent>{model.description}</TooltipContent>
                       </Tooltip>
@@ -152,8 +154,10 @@ export function ModelPicker({
                   {model.thinking && (
                     <span className="text-xs">
                       <Tooltip>
-                        <TooltipTrigger>
-                          <Brain className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Brain className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent>Thinking</TooltipContent>
                       </Tooltip>
@@ -162,8 +166,10 @@ export function ModelPicker({
                   {model.webSearch && (
                     <span className="text-xs">
                       <Tooltip>
-                        <TooltipTrigger>
-                          <Globe className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                        <TooltipTrigger asChild>
+                          <span>
+                            <Globe className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent>Web Search</TooltipContent>
                       </Tooltip>
@@ -172,8 +178,10 @@ export function ModelPicker({
                   {model.fileSearch && (
                     <span className="text-xs">
                       <Tooltip>
-                        <TooltipTrigger>
-                          <FileText className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                        <TooltipTrigger asChild>
+                          <span>
+                            <FileText className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+                          </span>
                         </TooltipTrigger>
                         <TooltipContent>File Search</TooltipContent>
                       </Tooltip>

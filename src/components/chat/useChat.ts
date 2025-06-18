@@ -11,6 +11,7 @@ import {
   isSupportedFileType,
   SUPPORTED_MODELS,
   isThinkingModel,
+  supportsThinkingAndWebSearch,
   type ThinkingIntensity,
 } from "@backend/constants";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
@@ -68,8 +69,8 @@ export function useChat() {
   const [selectedFiles, setSelectedFiles] = useState<SelectedFileState[]>([]);
   const [webSearchEnabled, setWebSearchEnabled] = useState(false);
   const [selectedModel, setSelectedModel] = useLocalStorageState<
-    (typeof SUPPORTED_MODELS)[number]["name"]
-  >("selectedModel", SUPPORTED_MODELS[0].name);
+    (typeof SUPPORTED_MODELS)[number]["id"]
+  >("selectedModel", SUPPORTED_MODELS[0].id);
   const [thinkingIntensity, setThinkingIntensity] =
     useLocalStorageState<ThinkingIntensity>("thinkingIntensity", "medium");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -94,9 +95,13 @@ export function useChat() {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  // Disable web search when switching to a thinking model
+  // Disable web search when switching to a thinking model that doesn't support both
   useEffect(() => {
-    if (isThinkingModel(selectedModel) && webSearchEnabled) {
+    if (
+      isThinkingModel(selectedModel) &&
+      webSearchEnabled &&
+      !supportsThinkingAndWebSearch(selectedModel)
+    ) {
       setWebSearchEnabled(false);
     }
   }, [selectedModel, webSearchEnabled]);
@@ -164,8 +169,8 @@ export function useChat() {
       if (lastModelRestoredConversationRef.current !== selectedConversationId) {
         // Always restore model, defaulting to gpt-4.1 if not set
         setSelectedModel(
-          (conversationModelSettings.model as (typeof SUPPORTED_MODELS)[number]["name"]) ??
-            SUPPORTED_MODELS[0].name,
+          (conversationModelSettings.model as (typeof SUPPORTED_MODELS)[number]["id"]) ??
+            SUPPORTED_MODELS[0].id,
         );
         // Always restore thinking intensity, defaulting to medium if not set
         setThinkingIntensity(

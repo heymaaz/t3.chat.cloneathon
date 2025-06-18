@@ -5,43 +5,86 @@ export const SUPPORTED_FILE_TYPES = ["txt", "pdf", "docx"] as const; // Whitelis
 
 export const SUPPORTED_MODELS = [
   {
-    name: "gpt-4.1",
+    name: "OpenAI GPT-4.1",
+    id: "gpt-4.1",
     description: "Fast, best for web search",
     thinking: false,
     webSearch: true,
     fileSearch: true,
+    openRouter: false,
   },
   {
-    name: "o4-mini",
+    name: "OpenAI o4 Mini",
+    id: "o4-mini",
     description: "Fast and powerful",
     thinking: true,
     webSearch: false,
     fileSearch: true,
+    openRouter: false,
   },
   {
-    name: "o3",
+    name: "OpenAI o3",
+    id: "o3",
     description: "Slower but more powerful",
     thinking: true,
     webSearch: false,
     fileSearch: true,
+    openRouter: false,
   },
   {
-    name: "o3-pro",
+    name: "OpenAI o3 Pro",
+    id: "o3-pro",
     description:
       "Deep Research, use for background tasks, can take 5-10 minutes",
     thinking: true,
     webSearch: false,
     fileSearch: true,
+    openRouter: false,
+  },
+  {
+    name: "Google Gemini 2.0 Flash",
+    id: "google/gemini-2.0-flash-001",
+    description: "Gemini 2.0 Flash via OpenRouter",
+    thinking: false,
+    webSearch: true,
+    fileSearch: false,
+    openRouter: true,
+  },
+  {
+    name: "Grok 3 Mini",
+    id: "x-ai/grok-3-mini-beta",
+    description: "Grok 3 Mini reasoning model via OpenRouter",
+    thinking: true,
+    webSearch: true,
+    fileSearch: false,
+    openRouter: true,
   },
 ] as const;
 
 export const WEB_SEARCH_MODELS = SUPPORTED_MODELS.filter(
-  (model) => model.webSearch,
-).map((model) => model.name);
+  (model): model is Extract<typeof model, { webSearch: true }> =>
+    model.webSearch,
+).map((model) => model.id);
 
 export const THINKING_MODELS = SUPPORTED_MODELS.filter(
-  (model) => model.thinking,
-).map((model) => model.name);
+  (model): model is Extract<typeof model, { thinking: true }> => model.thinking,
+).map((model) => model.id);
+
+export const FILE_SEARCH_MODELS = SUPPORTED_MODELS.filter(
+  (model): model is Extract<typeof model, { fileSearch: true }> =>
+    model.fileSearch,
+).map((model) => model.id);
+
+export const OPENROUTER_MODELS = SUPPORTED_MODELS.filter(
+  (model): model is Extract<typeof model, { openRouter: true }> =>
+    model.openRouter,
+).map((model) => model.id);
+
+export const isOpenRouterModel = (
+  model: string,
+): model is (typeof OPENROUTER_MODELS)[number] => {
+  return (OPENROUTER_MODELS as readonly string[]).includes(model);
+};
 
 export const SYSTEM_PROMPT = `
 You are T3 Chat Clone, an AI assistant powered by the {model-name}. My role is to assist and engage in conversation while being helpful, respectful, and engaging.
@@ -68,10 +111,10 @@ export type ThinkingIntensity = (typeof THINKING_INTENSITY_LEVELS)[number];
 // Helper function to check if a model is supported
 export const isSupportedModel = (
   model: string,
-): model is (typeof SUPPORTED_MODELS)[number]["name"] => {
+): model is (typeof SUPPORTED_MODELS)[number]["id"] => {
   return (SUPPORTED_MODELS as readonly (typeof SUPPORTED_MODELS)[number][])
-    .map((model) => model.name)
-    .includes(model as (typeof SUPPORTED_MODELS)[number]["name"]);
+    .map((model) => model.id)
+    .includes(model as (typeof SUPPORTED_MODELS)[number]["id"]);
 };
 
 // Helper function to check if a model supports thinking intensity
@@ -86,6 +129,19 @@ export const isWebSearchModel = (
   model: string,
 ): model is (typeof WEB_SEARCH_MODELS)[number] => {
   return (WEB_SEARCH_MODELS as readonly string[]).includes(model);
+};
+
+// Helper function to check if a model supports file search
+export const isFileSearchModel = (
+  model: string,
+): model is (typeof FILE_SEARCH_MODELS)[number] => {
+  return (FILE_SEARCH_MODELS as readonly string[]).includes(model);
+};
+
+// Helper function to check if a model supports both thinking and web search
+export const supportsThinkingAndWebSearch = (model: string): boolean => {
+  const modelConfig = SUPPORTED_MODELS.find((m) => m.id === model);
+  return Boolean(modelConfig?.thinking && modelConfig?.webSearch);
 };
 
 // MIME type mapping for supported file types

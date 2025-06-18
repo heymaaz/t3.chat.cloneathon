@@ -13,6 +13,7 @@ import { v } from "convex/values";
 import { Id, Doc } from "./_generated/dataModel";
 import { ActionCtx } from "./_generated/server";
 import { getLoggedInUser } from "./chatQueriesAndMutations";
+import { type CoreMessage } from "ai";
 import {
   MAX_FILES,
   MAX_FILE_SIZE,
@@ -20,6 +21,7 @@ import {
   getMimeType,
   isSupportedModel,
   isThinkingModel,
+  isOpenRouterModel,
   SYSTEM_PROMPT,
 } from "./constants";
 
@@ -183,6 +185,332 @@ export const generateAiResponse = internalAction({
       );
 
       try {
+        if (isOpenRouterModel(selectedModel)) {
+          // Use OpenAI SDK with OpenRouter base URL for unified handling
+          const openrouterClient = new OpenAI({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey: process.env.CONVEX_OPENROUTER_API_KEY!,
+          });
+
+          // Get recent messages for conversation history
+          const recentMessages = (
+            await ctx.runQuery(
+              internal.chatQueriesAndMutations.getRecentMessages,
+              {
+                conversationId: args.conversationId,
+                userId: conversation.userId,
+              },
+            )
+          ).reverse();
+
+          const history: CoreMessage[] = recentMessages.map(
+            (message): CoreMessage => {
+              // @ts-expect-error: Intentional comparison between 'ai' and 'assistant'/'user' for mapping roles
+              if (message.author === "ai") {
+                return {
+                  role: "assistant",
+                  content: message.content,
+                };
+              } else {
+                return {
+                  role: "user",
+                  content: message.content,
+                };
+              }
+            },
+          );
+
+          const webSearchEnabled = lastMessage.webSearchEnabled === true;
+          let modelForApi: string = selectedModel;
+          if (webSearchEnabled) {
+            modelForApi = `${selectedModel}:online`;
+          }
+
+          const reasoningParams: { effort?: "low" | "medium" | "high" } = {};
+          if (thinkingIntensity) {
+            reasoningParams.effort = thinkingIntensity;
+          }
+
+          // Use the working message format for web search, with streaming and context
+          if (webSearchEnabled) {
+            console.log(
+              "Web search enabled, using hybrid streaming + citations approach",
+            );
+
+            // Build messages in the format that works with OpenRouter web search
+            const messages: Array<{
+              role: "system" | "user" | "assistant";
+              content: Array<{ type: "text"; text: string }> | string;
+            }> = [];
+
+            // Add system message as string
+            messages.push({
+              role: "system",
+              content: sysPrompt,
+            });
+
+            // Add conversation history with proper format
+            for (const message of history) {
+              if (message.role === "assistant") {
+                // Extract text content from assistant message
+                const textContent =
+                  typeof message.content === "string"
+                    ? message.content
+                    : Array.isArray(message.content)
+                      ? message.content
+                          .map((part) => ("text" in part ? part.text : ""))
+                          .join("")
+                      : String(message.content);
+
+                messages.push({
+                  role: "assistant",
+                  content: textContent,
+                });
+              } else {
+                // Extract text content from user message
+                const textContent =
+                  typeof message.content === "string"
+                    ? message.content
+                    : Array.isArray(message.content)
+                      ? message.content
+                          .map((part) => ("text" in part ? part.text : ""))
+                          .join("")
+                      : String(message.content);
+
+                messages.push({
+                  role: "user",
+                  content: [{ type: "text", text: textContent }],
+                });
+              }
+            }
+
+            // Add the current user message in the array format
+            messages.push({
+              role: "user",
+              content: [{ type: "text", text: inputText }],
+            });
+
+            const streamingParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
+              {
+                model: modelForApi,
+                messages:
+                  messages as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+                stream: true, // Enable streaming
+              };
+
+            if (Object.keys(reasoningParams).length > 0) {
+              (streamingParams as any).reasoning = reasoningParams;
+            }
+
+            console.log("Starting streaming response with context:", {
+              model: streamingParams.model,
+              messageCount: streamingParams.messages.length,
+              hasSystemMessage: streamingParams.messages[0]?.role === "system",
+            });
+
+            // Start streaming response for real-time content
+            const responseStream =
+              await openrouterClient.chat.completions.create(streamingParams);
+
+            let reasoningSummary = "";
+
+            for await (const chunk of responseStream) {
+              const delta = chunk.choices[0]?.delta;
+              if (!delta) continue;
+
+              if (delta.content) {
+                await ctx.runMutation(
+                  internal.chatQueriesAndMutations.appendMessageContent,
+                  {
+                    messageId: aiMessageId,
+                    content: delta.content,
+                  },
+                );
+              }
+
+              const reasoningDelta = (delta as any).reasoning;
+              if (reasoningDelta) {
+                reasoningSummary += reasoningDelta;
+                await ctx.runMutation(
+                  internal.chatQueriesAndMutations.updateReasoningSummary,
+                  {
+                    messageId: aiMessageId,
+                    reasoningSummary: reasoningSummary,
+                  },
+                );
+              }
+            }
+
+            console.log("Streaming completed, now fetching citations...");
+
+            // Now make a separate non-streaming call to get citations
+            // Use just the current message for citation extraction to be fast
+            const citationParams: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming =
+              {
+                model: modelForApi,
+                messages: [
+                  {
+                    role: "user",
+                    content: [{ type: "text", text: inputText }],
+                  },
+                ] as OpenAI.Chat.Completions.ChatCompletionMessageParam[],
+                stream: false,
+              };
+
+            if (Object.keys(reasoningParams).length > 0) {
+              (citationParams as any).reasoning = reasoningParams;
+            }
+
+            try {
+              const citationResponse =
+                await openrouterClient.chat.completions.create(citationParams);
+
+              const citations: Array<{
+                type: "url";
+                url: string;
+                title: string;
+              }> = [];
+
+              const citationMessage = citationResponse.choices[0]?.message;
+              if (citationMessage && citationMessage.annotations) {
+                console.log(
+                  "Processing citations:",
+                  citationMessage.annotations,
+                );
+                const annotations = citationMessage.annotations as any[];
+                for (const annotation of annotations) {
+                  if (annotation.type === "url_citation") {
+                    const urlCitation = annotation.url_citation;
+                    const url = urlCitation?.url;
+                    const title = urlCitation?.title || "Web Result";
+
+                    if (
+                      url &&
+                      !citations.some((c) => c.type === "url" && c.url === url)
+                    ) {
+                      citations.push({ type: "url", url, title });
+                    }
+                  }
+                }
+              }
+
+              console.log("Final citations from hybrid approach:", citations);
+
+              await ctx.runMutation(
+                internal.chatQueriesAndMutations.markMessageComplete,
+                {
+                  messageId: aiMessageId,
+                  reasoningSummary: reasoningSummary.trim() || undefined,
+                  citations: citations.length > 0 ? citations : undefined,
+                },
+              );
+            } catch (citationError) {
+              console.log(
+                "Citation extraction failed, completing without citations:",
+                citationError,
+              );
+              // Complete the message even if citation extraction fails
+              await ctx.runMutation(
+                internal.chatQueriesAndMutations.markMessageComplete,
+                {
+                  messageId: aiMessageId,
+                  reasoningSummary: reasoningSummary.trim() || undefined,
+                  citations: undefined,
+                },
+              );
+            }
+
+            return;
+          }
+
+          // Use streaming for non-web search requests
+          const params: OpenAI.Chat.Completions.ChatCompletionCreateParamsStreaming =
+            {
+              model: modelForApi,
+              messages: [
+                { role: "system", content: sysPrompt },
+                ...(history as OpenAI.Chat.Completions.ChatCompletionMessageParam[]),
+              ],
+              stream: true,
+            };
+
+          if (Object.keys(reasoningParams).length > 0) {
+            (params as any).reasoning = reasoningParams;
+          }
+
+          const responseStream =
+            await openrouterClient.chat.completions.create(params);
+
+          let reasoningSummary = "";
+          const citations: Array<{
+            type: "url";
+            url: string;
+            title: string;
+          }> = [];
+
+          for await (const chunk of responseStream) {
+            const delta = chunk.choices[0]?.delta;
+            if (!delta) continue;
+
+            if (delta.content) {
+              await ctx.runMutation(
+                internal.chatQueriesAndMutations.appendMessageContent,
+                {
+                  messageId: aiMessageId,
+                  content: delta.content,
+                },
+              );
+            }
+
+            const reasoningDelta = (delta as any).reasoning;
+            if (reasoningDelta) {
+              reasoningSummary += reasoningDelta;
+              await ctx.runMutation(
+                internal.chatQueriesAndMutations.updateReasoningSummary,
+                {
+                  messageId: aiMessageId,
+                  reasoningSummary: reasoningSummary,
+                },
+              );
+            }
+
+            // Handle final chunk with annotations
+            if (chunk.choices[0]?.finish_reason === "stop") {
+              const choice = chunk.choices[0] as any;
+              const message = choice.message;
+
+              // Extract annotations from the final message
+              if (message && message.annotations) {
+                const annotations = message.annotations;
+                for (const annotation of annotations) {
+                  if (annotation.type === "url_citation") {
+                    const urlCitation = annotation.url_citation;
+                    const url = urlCitation?.url;
+                    const title = urlCitation?.title || "Web Result";
+
+                    if (
+                      url &&
+                      !citations.some((c) => c.type === "url" && c.url === url)
+                    ) {
+                      citations.push({ type: "url", url, title });
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          await ctx.runMutation(
+            internal.chatQueriesAndMutations.markMessageComplete,
+            {
+              messageId: aiMessageId,
+              reasoningSummary: reasoningSummary.trim() || undefined,
+              citations: citations.length > 0 ? citations : undefined,
+            },
+          );
+          return;
+        }
+
         // Create the streaming response using the Responses API
         const response = await openai.responses.create({
           model: selectedModel,
