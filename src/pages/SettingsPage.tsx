@@ -60,10 +60,13 @@ export default function SettingsPage() {
               <Key className="h-4 w-4" />
               API Keys
             </TabsTrigger>
-            <TabsTrigger value="danger-zone" className="gap-2">
-              <Shield className="h-4 w-4" />
-              Danger Zone
-            </TabsTrigger>
+            {/* Only show this tab for authenticated users */}
+            {loggedInUser && !loggedInUser.isAnonymous && (
+              <TabsTrigger value="danger-zone" className="gap-2">
+                <Shield className="h-4 w-4" />
+                Danger Zone
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* API Keys Tab */}
@@ -72,9 +75,11 @@ export default function SettingsPage() {
           </TabsContent>
 
           {/* Danger Zone Tab */}
-          <TabsContent value="danger-zone" className="space-y-6">
-            <DangerZone />
-          </TabsContent>
+          {loggedInUser && !loggedInUser.isAnonymous && (
+            <TabsContent value="danger-zone" className="space-y-6">
+              <DangerZone />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>
