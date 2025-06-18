@@ -23,44 +23,6 @@ export default function SettingsPage() {
     );
   }
 
-  // Handle anonymous users
-  if (loggedInUser && loggedInUser.isAnonymous) {
-    return (
-      <div className="min-h-screen bg-background">
-        {/* Top Bar */}
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-card sticky top-0 z-40">
-          <Button
-            variant="ghost"
-            onClick={() => void navigate({ to: "/" })}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back to Chat
-          </Button>
-          <div className="flex items-center gap-2">
-            <ThemeToggleButton />
-            <SignOutButton />
-          </div>
-        </div>
-
-        {/* Account Required Message */}
-        <div className="max-w-4xl mx-auto py-8 px-4 flex justify-center items-center h-screen">
-          <div className="text-center">
-            <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <h2 className="text-2xl font-bold mb-2">Account Required</h2>
-            <p className="text-muted-foreground mb-4">
-              Please create an account or sign in with an existing account to
-              access settings
-            </p>
-            <Button onClick={() => void navigate({ to: "/" })}>
-              Back to Chat
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background">
       {/* Top Bar */}
