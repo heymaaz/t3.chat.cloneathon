@@ -11,6 +11,7 @@ import {
   isSupportedFileType,
   SUPPORTED_MODELS,
   isThinkingModel,
+  supportsThinkingAndWebSearch,
   type ThinkingIntensity,
 } from "@backend/constants";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
@@ -94,9 +95,13 @@ export function useChat() {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  // Disable web search when switching to a thinking model
+  // Disable web search when switching to a thinking model that doesn't support both
   useEffect(() => {
-    if (isThinkingModel(selectedModel) && webSearchEnabled) {
+    if (
+      isThinkingModel(selectedModel) &&
+      webSearchEnabled &&
+      !supportsThinkingAndWebSearch(selectedModel)
+    ) {
       setWebSearchEnabled(false);
     }
   }, [selectedModel, webSearchEnabled]);

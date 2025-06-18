@@ -55,7 +55,7 @@ export const SUPPORTED_MODELS = [
     id: "x-ai/grok-3-mini-beta",
     description: "Grok 3 Mini reasoning model via OpenRouter",
     thinking: true,
-    webSearch: false,
+    webSearch: true,
     fileSearch: false,
     openRouter: true,
   },
@@ -136,6 +136,12 @@ export const isFileSearchModel = (
   model: string,
 ): model is (typeof FILE_SEARCH_MODELS)[number] => {
   return (FILE_SEARCH_MODELS as readonly string[]).includes(model);
+};
+
+// Helper function to check if a model supports both thinking and web search
+export const supportsThinkingAndWebSearch = (model: string): boolean => {
+  const modelConfig = SUPPORTED_MODELS.find((m) => m.id === model);
+  return Boolean(modelConfig?.thinking && modelConfig?.webSearch);
 };
 
 // MIME type mapping for supported file types
