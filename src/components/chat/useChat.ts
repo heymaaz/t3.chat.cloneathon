@@ -12,9 +12,11 @@ import {
   SUPPORTED_MODELS,
   isThinkingModel,
   supportsThinkingAndWebSearch,
+  isOpenRouterModel,
   type ThinkingIntensity,
 } from "@backend/constants";
 import { useLocalStorageState } from "@/hooks/useLocalStorageState";
+import { loadApiKeysFromStorage, hasApiKey } from "@/lib/api-keys";
 
 const MOBILE_FILENAME_TRUNCATION_THRESHOLD = 15;
 const DESKTOP_FILENAME_TRUNCATION_THRESHOLD = 30;
@@ -428,6 +430,27 @@ export function useChat() {
         toast.error("Files are still uploading. Please wait.");
         return;
       }
+
+      // Load API keys from localStorage
+      const apiKeys = loadApiKeysFromStorage();
+
+      // Validate API key based on selected model
+      if (isOpenRouterModel(selectedModel)) {
+        if (!hasApiKey("openrouter")) {
+          toast.error(
+            "OpenRouter API key is required for this model. Please add it in Settings.",
+          );
+          return;
+        }
+      } else {
+        if (!hasApiKey("openai")) {
+          toast.error(
+            "OpenAI API key is required for this model. Please add it in Settings.",
+          );
+          return;
+        }
+      }
+
       try {
         let conversationIdToUse = selectedConversationId;
         if (!conversationIdToUse) {
@@ -463,6 +486,8 @@ export function useChat() {
               ? thinkingIntensity
               : undefined,
             timezone,
+            openaiApiKey: apiKeys.openai || undefined,
+            openrouterApiKey: apiKeys.openrouter || undefined,
           });
           if (result.errors && result.errors.length > 0) {
             result.errors.forEach((error) => {
@@ -481,6 +506,8 @@ export function useChat() {
               ? thinkingIntensity
               : undefined,
             timezone,
+            openaiApiKey: apiKeys.openai || undefined,
+            openrouterApiKey: apiKeys.openrouter || undefined,
           });
         }
         setSelectedFiles([]);

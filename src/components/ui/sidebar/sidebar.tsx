@@ -1,6 +1,5 @@
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
 
@@ -64,9 +63,7 @@ export function Sidebar({
             {/* Removed the title from here */}
           </div>
         </div>
-        <ScrollArea className="flex-1">
-          <div className={cn("flex-1")}>{children}</div>
-        </ScrollArea>
+        <div className="flex-1 flex flex-col min-h-0">{children}</div>
       </aside>
     </>
   );

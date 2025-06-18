@@ -6,6 +6,7 @@ import { Toaster } from "sonner";
 import { Loader2, Sun, Moon, Laptop } from "lucide-react";
 import { useTheme } from "@/components/use-theme";
 import { Button } from "@/components/ui/button";
+import { useLocation } from "@tanstack/react-router";
 import React from "react";
 
 function Content({ children }: { children: React.ReactNode }) {
@@ -45,6 +46,7 @@ function Content({ children }: { children: React.ReactNode }) {
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
+  const location = useLocation();
 
   const toggleTheme = () => {
     if (theme === "light") {
@@ -56,29 +58,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Check if we're on the settings page
+  const isSettingsPage = location.pathname === "/settings";
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xs h-16 flex justify-between items-center border-b shadow-xs px-4">
-        <div className="w-12 md:w-0"></div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            type="button"
-          >
-            {theme === "light" ? (
-              <Sun className="h-5 w-5" />
-            ) : theme === "dark" ? (
-              <Moon className="h-5 w-5" />
-            ) : (
-              <Laptop className="h-5 w-5" />
-            )}
-            <span className="sr-only">Toggle theme</span>
-          </Button>
-          <SignOutButton />
-        </div>
-      </header>
+      {/* Only show header if not on settings page */}
+      {!isSettingsPage && (
+        <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xs h-16 flex justify-between items-center border-b shadow-xs px-4">
+          <div className="w-12 md:w-0"></div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              type="button"
+            >
+              {theme === "light" ? (
+                <Sun className="h-5 w-5" />
+              ) : theme === "dark" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Laptop className="h-5 w-5" />
+              )}
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+            <SignOutButton />
+          </div>
+        </header>
+      )}
       <main className="flex-1 flex flex-col">
         <Content>{children}</Content>
       </main>

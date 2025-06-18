@@ -223,6 +223,8 @@ export const sendMessage = action({
       v.union(v.literal("low"), v.literal("medium"), v.literal("high")),
     ),
     timezone: v.optional(v.string()),
+    openaiApiKey: v.optional(v.string()),
+    openrouterApiKey: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (
@@ -234,6 +236,8 @@ export const sendMessage = action({
       model?: string;
       thinkingIntensity?: "low" | "medium" | "high";
       timezone?: string;
+      openaiApiKey?: string;
+      openrouterApiKey?: string;
     },
   ): Promise<null> => {
     const user: Doc<"users"> = await getLoggedInUser(ctx);
@@ -287,6 +291,8 @@ export const sendMessage = action({
     // Schedule the AI response action
     await ctx.scheduler.runAfter(0, internal.chat.generateAiResponse, {
       conversationId: args.conversationId,
+      openaiApiKey: args.openaiApiKey,
+      openrouterApiKey: args.openrouterApiKey,
     });
 
     // If this is the first message, schedule the title generation action
@@ -299,6 +305,7 @@ export const sendMessage = action({
         {
           // 5 second delay, adjust as needed
           conversationId: args.conversationId,
+          openaiApiKey: args.openaiApiKey,
         },
       );
     }
