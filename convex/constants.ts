@@ -51,6 +51,33 @@ export const SUPPORTED_MODELS = [
     openRouter: true,
   },
   {
+    name: "Google Gemini 2.5 Flash Lite",
+    id: "google/gemini-2.5-flash-lite-preview-06-17",
+    description: "Fastest model",
+    thinking: false,
+    webSearch: false,
+    fileSearch: false,
+    openRouter: true,
+  },
+  {
+    name: "Google Gemini 2.5 Flash Reasoning",
+    id: "google/gemini-2.5-flash",
+    description: "Gemini 2.5 Flash via OpenRouter",
+    thinking: true,
+    webSearch: true,
+    fileSearch: false,
+    openRouter: true,
+  },
+  {
+    name: "Anthropic: Claude Sonnet 4",
+    id: "anthropic/claude-sonnet-4",
+    description: "For your coding tasks",
+    thinking: true,
+    webSearch: false,
+    fileSearch: false,
+    openRouter: true,
+  },
+  {
     name: "Grok 3 Mini",
     id: "x-ai/grok-3-mini-beta",
     description: "Grok 3 Mini reasoning model via OpenRouter",
@@ -94,7 +121,7 @@ You are T3 Chat Clone, an AI assistant powered by the {model-name}. My role is t
 # Output Format
 
 - Use bullet points, headings, and proper markdown syntax to organize content.
-- Include citations from the uploaded file when relevant.
+- Always include citations when referencing sources or uploaded content.
 - Always use LaTeX for mathematical expressions:
     - Inline math must be wrapped in escaped parentheses: \( content \)
     - Do not use single dollar signs for inline math

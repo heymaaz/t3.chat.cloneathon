@@ -61,7 +61,7 @@ export function ApiKeySection() {
 
   const maskKey = (key: string) => {
     if (key.length <= 8) return key;
-    return `${key.slice(0, 4)}${"*".repeat(key.length - 8)}${key.slice(-4)}`;
+    return `${key.slice(0, 4)}${"*".repeat(4)}${key.slice(-4)}`;
   };
 
   return (
@@ -74,6 +74,12 @@ export function ApiKeySection() {
         <CardDescription>
           Manage your OpenAI and OpenRouter API keys. These are stored locally
           in your browser for security.
+          <br />
+          <br />
+          <p className="text-xs text-muted-foreground">
+            <b>Note:</b> Chat Title Generation is powered by OpenAI. O models
+            require your OpenAI org to be verified. (for reasoning summaries)
+          </p>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
