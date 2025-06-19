@@ -35,6 +35,7 @@ const messageDoc = v.object({
   status: v.optional(
     v.union(v.literal("typing"), v.literal("completed"), v.literal("error")),
   ),
+  errorDetails: v.optional(v.string()),
   fileIds: v.optional(v.array(v.string())),
   uploadedFileNames: v.optional(v.array(v.string())),
   uploadedFiles: v.optional(
@@ -352,6 +353,7 @@ export const storeAiMessage = internalMutation({
     status: v.optional(
       v.union(v.literal("typing"), v.literal("completed"), v.literal("error")),
     ),
+    errorDetails: v.optional(v.string()),
     openaiResponseId: v.optional(v.string()),
     reasoningSummary: v.optional(v.string()),
     citations: v.optional(
@@ -379,6 +381,7 @@ export const storeAiMessage = internalMutation({
       conversationId: Id<"conversations">;
       content: string;
       status?: "typing" | "completed" | "error";
+      errorDetails?: string;
       openaiResponseId?: string;
       citations?: Array<
         | {
@@ -401,6 +404,7 @@ export const storeAiMessage = internalMutation({
       author: "assistant" as const,
       content: args.content,
       status: args.status,
+      errorDetails: args.errorDetails,
       openaiResponseId: args.openaiResponseId,
       reasoningSummary: args.reasoningSummary,
       citations: args.citations,
@@ -670,11 +674,12 @@ export const markMessageComplete = internalMutation({
 export const markMessageError = internalMutation({
   args: {
     messageId: v.id("messages"),
+    errorDetails: v.optional(v.string()),
   },
   returns: v.null(),
   handler: async (
     ctx: MutationCtx,
-    args: { messageId: Id<"messages"> },
+    args: { messageId: Id<"messages">; errorDetails?: string },
   ): Promise<null> => {
     const message = await ctx.db.get(args.messageId);
     if (!message) {
@@ -685,6 +690,7 @@ export const markMessageError = internalMutation({
     }
     await ctx.db.patch(args.messageId, {
       status: "error",
+      errorDetails: args.errorDetails,
     });
     return null;
   },
