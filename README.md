@@ -4,9 +4,9 @@
 
 [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/heymaaz/t3.chat.cloneathon)
 
-_A modern AI-powered chatbot with intelligent file search and real-time web search capabilities_
+_A modern AI-powered chatbot with intelligent file search and real-time web search capabilities. Try it out at https://t3chatcloneathon.netlify.app_
 
-[Features](#-features) • [Quick Start](#-quick-start) • [Self-Hosting](#-self-hosting) • [Usage](#-usage) • [Tech Stack](#-tech-stack)
+[Features](#-features) • [Quick Start](#-quick-start) • [Self Hosting](#️-self-hosting) • [Usage](#-usage) • [Tech Stack](#️-tech-stack)
 
 </div>
 
@@ -75,7 +75,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ---
 
-## 🏗️ Self-Hosting
+## 🏗️ Self Hosting
 
 ### Using Local Convex
 
@@ -191,7 +191,7 @@ pnpm build
 ### Project Structure
 
 ```
-cloneathalon/
+<repo-directory>/
 ├── src/                 # Frontend React application
 │   ├── components/     # Reusable UI components
 │   ├── pages/         # Application pages
