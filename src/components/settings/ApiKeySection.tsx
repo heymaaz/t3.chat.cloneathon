@@ -204,8 +204,17 @@ export function ApiKeySection() {
         {/* Help Text */}
         <div className="text-xs text-muted-foreground space-y-1 pt-2 border-t">
           <p>
-            • Your API keys are stored locally in your browser and never sent to
-            our servers
+            • Your API keys are stored locally in your browser and never
+            stored/logged in our servers. Don&apos;t trust this website with
+            your keys? Use your own self-hosted version:{" "}
+            <a
+              href="https://github.com/heymaaz/t3.chat.cloneathon?tab=readme-ov-file#%EF%B8%8F-self-hosting"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              github.com/heymaaz/t3.chat.cloneathon
+            </a>
           </p>
           <p>
             • Get your OpenAI API key from:{" "}
