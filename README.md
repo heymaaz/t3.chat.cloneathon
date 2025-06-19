@@ -4,35 +4,35 @@ A modern AI-powered chatbot with file search and web search.
 
 This project uses [pnpm](https://pnpm.io/) for dependency management. Install it globally if you don't have it.
 
-## Quick Start
+## Self-hosting guide using local Convex
 
 ```bash
 git clone <repository-url>
-cd chatbot_using_convex
+cd cloneathalon
 pnpm install
-cp .env.example .env.local
-# edit .env.local with your Convex keys
-# Add your OpenAI API key to convex dashboard
-npx convex env set CONVEX_OPENAI_API_KEY {YOUR_CONVEX_OPENAI_API_KEY}
-pnpm dev
+# We need node 18
+nvm install 18
+nvm use 18
+# Start Convex locally
+npx convex dev
+Welcome to Convex! Would you like to login to your account?
+    Start without an account (run Convex locally)
+Which project would you like to use?
+    new
+Choose a name:
+    cloneathalon (or whatever you want to call it)
+
+# Now open another terminal and run the app
+nvm use 18
+pnpm dev:noconvex
 ```
 
-The `dev` script spins up both the Vite frontend and Convex backend.
-
-### Environment variables
-
-`.env.example` contains the variables required to run the app:
-
-```text
-CONVEX_DEPLOYMENT=your-convex-deployment
-VITE_CONVEX_URL=your-vite-convex-url
-```
-
-Copy this file to `.env.local` and fill in your own values.
+The `dev` script spins up both the Vite frontend and Convex backend if you use convex (on cloud)
 
 ### Common scripts
 
-- `pnpm dev` – start the frontend and backend in development mode
+- `pnpm dev` – start the frontend and backend in development mode (if you use convex on cloud)
+- `pnpm dev:noconvex` – start the frontend and backend in development mode (if you use convex locally) **first run** `npx convex dev` in a separate terminal to start the convex local backend
 - `pnpm build` – build the production bundle
 - `pnpm lint` – run ESLint
 - `pnpm typecheck` – run TypeScript type checks

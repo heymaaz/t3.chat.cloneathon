@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "convex dev --once && node setup.mjs && npm-run-all --parallel dev:frontend dev:backend",
+    "dev:noconvex": "node setup.mjs && npm-run-all --parallel dev:frontend dev:backend",
     "dev:frontend": "vite --open",
     "dev:backend": "convex dev",
     "build": "vite build",
