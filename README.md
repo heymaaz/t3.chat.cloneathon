@@ -24,7 +24,6 @@ The `dev` script spins up both the Vite frontend and Convex backend.
 `.env.example` contains the variables required to run the app:
 
 ```text
-CONVEX_DEPLOY_KEY=your-convex-deploy-key
 CONVEX_DEPLOYMENT=your-convex-deployment
 VITE_CONVEX_URL=your-vite-convex-url
 ```
@@ -96,4 +95,4 @@ The backend code is in the `convex` directory.
 
 ## App authentication
 
-Chef apps use [Convex Auth](https://auth.convex.dev/) with Anonymous auth for easy sign in. You may wish to change this before deploying your app.
+[Convex Auth](https://auth.convex.dev/)
