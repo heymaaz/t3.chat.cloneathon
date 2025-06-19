@@ -22,6 +22,7 @@ const applicationTables = {
     status: v.optional(
       v.union(v.literal("typing"), v.literal("completed"), v.literal("error")),
     ),
+    errorDetails: v.optional(v.string()), // Store specific error details for error status
     fileIds: v.optional(v.array(v.string())), // OpenAI File IDs
     uploadedFileNames: v.optional(v.array(v.string())),
     // Add storage mapping for file previews

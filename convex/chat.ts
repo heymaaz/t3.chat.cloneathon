@@ -56,6 +56,40 @@ interface ResponseOutput {
 
 // OpenAI client will be created with user's API key in each action
 
+// Helper function to extract meaningful error messages for users
+function getUserFriendlyErrorMessage(error: any): string {
+  if (error && typeof error === "object") {
+    // OpenAI API errors
+    if (error.error && error.error.message) {
+      const message = error.error.message;
+
+      // Handle specific OpenAI error types
+      if (error.error.code === "invalid_api_key") {
+        return "Invalid API key. Please check your API key in Settings.";
+      } else if (error.error.code === "insufficient_quota") {
+        return "API quota exceeded. Please check your OpenAI account balance.";
+      } else if (error.error.code === "rate_limit_exceeded") {
+        return "Rate limit exceeded. Please try again in a moment.";
+      } else if (error.error.code === "model_not_found") {
+        return "Selected model is not available. Please try a different model.";
+      }
+      if (error.code === 401 && error.message.includes("No auth credentials")) {
+        return "Invalid OpenRouter API key. Please check your OpenRouter API key in Settings.";
+      }
+
+      // Return the original error message for other API errors
+      return message;
+    }
+
+    // Generic error message
+    if (error.message) {
+      return error.message;
+    }
+  }
+
+  return "An unexpected error occurred. Please try again.";
+}
+
 // Action that uses OpenAI Responses API to generate AI responses with file search
 export const generateAiResponse = internalAction({
   args: {
@@ -733,11 +767,13 @@ export const generateAiResponse = internalAction({
             internal.chatQueriesAndMutations.markMessageError,
             {
               messageId: aiMessageId,
+              errorDetails: "No content was generated in the response.",
             },
           );
         }
       } catch (error) {
         console.error("Error during OpenAI response generation:", error);
+        const errorMessage = getUserFriendlyErrorMessage(error);
         // Update the existing AI message with error status and content
         // instead of creating a new message
         await ctx.runMutation(
@@ -752,17 +788,20 @@ export const generateAiResponse = internalAction({
           internal.chatQueriesAndMutations.markMessageError,
           {
             messageId: aiMessageId,
+            errorDetails: errorMessage,
           },
         );
       }
     } catch (error) {
       console.error("Error in generateAiResponse:", error);
+      const errorMessage = getUserFriendlyErrorMessage(error);
       // This outer catch handles errors that occur before message creation
       // In this case, we should store a new error message
       await ctx.runMutation(internal.chatQueriesAndMutations.storeAiMessage, {
         conversationId: args.conversationId,
         content: "Sorry, I encountered an error while preparing the response.",
         status: "error",
+        errorDetails: errorMessage,
       });
     }
   },

@@ -52,6 +52,9 @@ export function useChat() {
   const lastModelRestoredConversationRef = useRef<Id<"conversations"> | null>(
     null,
   );
+  const lastMessageCountRef = useRef<number>(0);
+  const seenErrorMessageIdsRef = useRef<Set<string>>(new Set());
+
   const createConversation = useMutation(
     api.chatQueriesAndMutations.createConversation,
   );
@@ -529,6 +532,33 @@ export function useChat() {
       navigate,
     ],
   );
+
+  // Effect to watch for new error messages and show toasts with specific error details
+  useEffect(() => {
+    if (messagesForSelectedConversation) {
+      // Check all messages for errors we haven't seen yet
+      messagesForSelectedConversation.forEach((message) => {
+        if (
+          message.status === "error" &&
+          message.errorDetails &&
+          !seenErrorMessageIdsRef.current.has(message._id)
+        ) {
+          toast.error(message.errorDetails);
+          seenErrorMessageIdsRef.current.add(message._id);
+        }
+      });
+
+      lastMessageCountRef.current = messagesForSelectedConversation.length;
+    }
+  }, [messagesForSelectedConversation]);
+
+  // Reset seen error messages when conversation changes
+  useEffect(() => {
+    if (selectedConversationId !== previousConversationIdRef.current) {
+      seenErrorMessageIdsRef.current.clear();
+      lastMessageCountRef.current = 0;
+    }
+  }, [selectedConversationId]);
 
   return {
     conversations,
